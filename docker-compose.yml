@@ -1,0 +1,47 @@
+version: '3.2'
+
+networks:
+  bridge:
+    driver: bridge
+
+services:
+  proxy:
+    image: nginx:stable-alpine
+    container_name: mediawiki-nginx-proxy
+    volumes:
+      - "./etc/nginx.conf:/etc/nginx/nginx.conf"
+      - "mediawiki-data:/var/www/mediawiki"
+    depends_on: 
+      - web
+    networks:
+      - bridge
+    ports:
+      - 80:80
+  web:
+    build: .
+    container_name: mediawiki-php-web
+    restart: always
+    volumes:
+      - "mediawiki-data:/var/www/mediawiki"
+#        - "./www/LocalSettings.php:/var/www/mediawiki/LocalSettings.php"
+#        - "./www/images:/var/www/mediawiki/images"
+    depends_on:
+      - db
+    networks:
+      - bridge
+  db:
+    image: postgres:9.5-alpine
+    container_name: mediawiki-postgres-db
+    environment:
+      - POSTGRES_ROOT_PASSWORD=mediawiki
+      - POSTGRES_PASSWORD=mediawiki
+      - POSTGRES_USER=mediawiki
+      - POSTGRES_DB=mediawiki
+      - POSTGRES_INITDB_ARGS="--encoding=UTF8"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - bridge
+volumes:
+  mediawiki-data:
+  postgres-data:
